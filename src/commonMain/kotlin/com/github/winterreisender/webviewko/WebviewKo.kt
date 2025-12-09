@@ -25,18 +25,19 @@ package com.github.winterreisender.webviewko
  *
  * @param name the name of the global JS function
  * @param fn the callback function which receives the request parameter in JSON as input and return the response JSON and status.When `fn` return `Pair(Response,Status)` the webview will receive the response and status . When `fn` returns `String`, the Status is 0. When `fn` returns `Unit`, the webview won't receive a feedback.
-
+ */
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
-inline fun <reified R :@Serializable Any> WebviewKo.bindAuto(name :String, crossinline fn : WebviewKo.(Array<out JsonElement>)->R) = bind(name) {
+inline fun <reified R : @Serializable Any> WebviewKo.bindAuto(
+    name: String,
+    crossinline fn: WebviewKo.(Array<out JsonElement>) -> R
+) = bind(name) {
     Json.encodeToString(
         fn(Json.decodeFromString(it))
     )
-}*/
+}
 
 /**
  * The Kotlin Multiplatform binding to webview
@@ -44,7 +45,7 @@ inline fun <reified R :@Serializable Any> WebviewKo.bindAuto(name :String, cross
  * @param debug enable debug mode for webview
  * @param libPath The lib's path. Not supported in Kotlin/Native
  */
-expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
+expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
 
     /**
      * Updates the title of the native window.
@@ -53,7 +54,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * @param v the new title
      */
-    fun title(v: String)
+    fun title(v: String): Int
 
     /**
      * Navigates webview to the given URL
@@ -62,7 +63,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * @param v the URL or URI
      * */
-    fun url(v: String)
+    fun url(v: String): Int
 
     /**
      * Navigates webview to the given URL
@@ -71,14 +72,14 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * @param url the URL or URI
      * */
-    fun navigate(url: String)
+    fun navigate(url: String): Int
 
     /**
      * Set webview HTML directly.
      *
      * @param v the HTML content
      */
-    fun html(v :String)
+    fun html(v: String): Int
 
     /**
      * Updates the size of the native window.
@@ -87,7 +88,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * @param hints can be one of [WindowHint]
      */
-    fun size(width: Int, height: Int, hints: WindowHint = WindowHint.None)
+    fun size(width: Int, height: Int, hints: WindowHint = WindowHint.None): Int
 
     /**
      * The window size hints used by `WebviewKo.size`
@@ -109,7 +110,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * @param js the JS code
      */
-    fun init(js :String)
+    fun init(js: String): Int
 
     /**
      * Evaluates arbitrary JS code.
@@ -118,7 +119,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * @param js the JS code
      */
-    fun eval(js :String)
+    fun eval(js: String): Int
 
     /**
      * Should be used in [bind] to throw an exception in JS
@@ -138,7 +139,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      * @param name the name of the global JS function
      * @param fn the callback function which receives the request parameter in JSON as input and return the response to JS in JSON. In Java the fn should be String response(WebviewKo webview, String request)
      */
-    fun bindRaw(name :String, fn :WebviewKo.(String?)->Pair<String,Int>?)
+    fun bindRaw(name: String, fn: WebviewKo.(String?) -> Pair<String, Int>?)
 
     /**
      * Binds a Kotlin callback so that it will appear under the given name as a global JS function.
@@ -146,14 +147,14 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      * @param name the name of the global JS function
      * @param fn the callback function which receives the request parameter in JSON as input and return the response JSON. If you want to reject the `Promise`, throw [JSRejectException] in `fn`
      */
-    fun bind(name :String, fn :WebviewKo.(String)->String)
+    fun bind(name: String, fn: WebviewKo.(String) -> String)
 
     /**
      * Removes a callback that was previously set by `webview_bind`.
      *
      * @param name the name of JS function used in `webview_bind`
      */
-    fun unbind(name: String)
+    fun unbind(name: String): Int
 
 
     /**
@@ -164,7 +165,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      * @param fn the function to be executed on the main thread.
      *
      */
-    fun dispatch(fn : WebviewKo.()->Unit)
+    fun dispatch(fn: WebviewKo.() -> Unit)
 
 
     /**
@@ -172,7 +173,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * This will block the thread.
      */
-    fun start()
+    fun start(): Int
 
     /**
      * Runs the main loop until it's terminated and destroy the webview after that.
@@ -186,7 +187,7 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      *
      * It is safe to call this function from another other background thread.
      */
-    fun terminate()
+    fun terminate(): Int
 
     /**
      * Destroy the webview and close the native window.
@@ -194,5 +195,5 @@ expect class WebviewKo(debug: Int = 0, libPath :String? = null) {
      * You must destroy the webview after [start]
      *
      */
-    fun destroy()
+    fun destroy(): Int
 }

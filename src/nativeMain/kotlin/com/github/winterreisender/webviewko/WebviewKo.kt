@@ -15,15 +15,16 @@
  *
  * SPDX short identifier: Apache-2.0
  */
+@file:OptIn(ExperimentalForeignApi::class)
 
 package com.github.winterreisender.webviewko
 
-import kotlinx.cinterop.*
 import com.github.winterreisender.cwebview.*
-import kotlin.native.concurrent.AtomicReference
+import kotlinx.cinterop.*
+import kotlin.concurrent.AtomicReference
 
-private typealias BindContext = Pair<WebviewKo,WebviewKo.(String?) -> Pair<String,Int>?>
-private typealias DispatchContext = Pair<WebviewKo,WebviewKo.() ->Unit>
+private typealias BindContext = Pair<WebviewKo, WebviewKo.(String?) -> Pair<String, Int>?>
+private typealias DispatchContext = Pair<WebviewKo, WebviewKo.() -> Unit>
 
 
 /**
@@ -34,19 +35,20 @@ private typealias DispatchContext = Pair<WebviewKo,WebviewKo.() ->Unit>
  * @param libPath not supported in Kotlin/Native
  */
 
-actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
-    private val w :webview_t = webview_create(debug, null) ?: throw Exception("Failed to create webview")
+actual class WebviewKo actual constructor(debug: Int, libPath: String?) {
+    private val w: webview_t = webview_create(debug, null) ?: throw Exception("Failed to create webview")
 
     // Garbage Collection List for bind and dispatch
     private val disposeList = AtomicReference(listOf<StableRef<Any>>())
-    private fun addDispose(s: StableRef<Any>){
+    private fun addDispose(s: StableRef<Any>) {
         disposeList.value = mutableListOf<StableRef<Any>>().apply {
             addAll(disposeList.value)
-            if(!contains(s)){
+            if (!contains(s)) {
                 add(s)
             }
         }
     }
+
     protected fun finalize() {
         disposeList.value.forEach { it.dispose() }
         webview_destroy(w)
@@ -59,7 +61,7 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      *
      * @param v the new title
      */
-    actual fun title(v: String) = webview_set_title(w,v)
+    actual fun title(v: String) = webview_set_title(w, v)
 
 
     /**
@@ -78,22 +80,23 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      *
      * @param url the URL or URI
      * */
-    actual fun navigate(url: String) = webview_navigate(w,url)
+    actual fun navigate(url: String) = webview_navigate(w, url)
 
     /**
      * Set webview HTML directly.
      *
      * @param v the HTML content
      */
-    actual fun html(v: String) = webview_set_html(w,v)
+    actual fun html(v: String) = webview_set_html(w, v)
 
 
-    actual enum class WindowHint(v :Int) {
-        None(WEBVIEW_HINT_NONE),
-        Min(WEBVIEW_HINT_MIN),
-        Max(WEBVIEW_HINT_MAX),
-        Fixed(WEBVIEW_HINT_FIXED)
+    actual enum class WindowHint(val v: webview_hint_t) {
+        None(webview_hint_t.WEBVIEW_HINT_NONE),
+        Min(webview_hint_t.WEBVIEW_HINT_MIN),
+        Max(webview_hint_t.WEBVIEW_HINT_MAX),
+        Fixed(webview_hint_t.WEBVIEW_HINT_FIXED)
     }
+
     /**
      * Updates the size of the native window.
      *
@@ -102,7 +105,7 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      * @param hints can be one of [WindowHint]
      */
     actual fun size(width: Int, height: Int, hints: WindowHint) =
-        webview_set_size(w, width, height, hints.ordinal)
+        webview_set_size(w, width, height, hints.v)
 
     /**
      * Injects JS code at the initialization of the new page.
@@ -111,7 +114,7 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      *
      * @param js the JS code
      */
-    actual fun init(js: String) = webview_init(w,js)
+    actual fun init(js: String) = webview_init(w, js)
 
     /**
      * Evaluates arbitrary JS code.
@@ -120,7 +123,7 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      *
      * @param js the JS code
      */
-    actual fun eval(js: String) = webview_eval(w,js)
+    actual fun eval(js: String) = webview_eval(w, js)
 
 
     /**
@@ -131,15 +134,15 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      * @param name the name of the global JS function
      * @param fn the callback function which receives the request parameter in JSON as input and return the response to JS in JSON.
      */
-    actual fun bindRaw(name: String, fn: WebviewKo.(String?) -> Pair<String,Int>?) {
+    actual fun bindRaw(name: String, fn: WebviewKo.(String?) -> Pair<String, Int>?) {
         val ctx = StableRef.create(BindContext(this, fn))
         addDispose(ctx)
 
         webview_bind(
-            w,name,
-            staticCFunction { seq,req,arg ->
-                initRuntimeIfNeeded()
-                val (webviewKo,callback) = arg!!.asStableRef<BindContext>().get()
+            w, name,
+            staticCFunction { seq, req, arg ->
+                //initRuntimeIfNeeded()
+                val (webviewKo, callback) = arg!!.asStableRef<BindContext>().get()
                 val (response, status) = callback(webviewKo, req?.toKString()) ?: return@staticCFunction
                 webview_return(webviewKo.w, seq?.toKString(), status, response)
             },
@@ -155,7 +158,8 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      * @param reason the reason shown in JS.
      * @param json the JSON Exception object for JS. If it's not null, `reason` willed be covered
      */
-    actual class JSRejectException actual constructor(reason: String?, json :String?) : Throwable(json ?: """ "$reason" """)
+    actual class JSRejectException actual constructor(reason: String?, json: String?) :
+        Throwable(json ?: """ "$reason" """)
 
     /**
      * Binds a Kotlin callback so that it will appear under the given name as a global JS function.
@@ -163,12 +167,12 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      * @param name the name of the global JS function
      * @param fn the callback function which receives the request parameter in JSON as input and return the response JSON. If you want to reject the `Promise`, throw [JSRejectException] in `fn`
      */
-    actual fun bind(name :String, fn: WebviewKo.(String) -> String) {
+    actual fun bind(name: String, fn: WebviewKo.(String) -> String) {
         bindRaw(name) {
             runCatching { fn(it ?: "") }.fold(
                 onSuccess = { Pair(it, 0) },
-                onFailure =  {
-                    when(it) {
+                onFailure = {
+                    when (it) {
                         is JSRejectException -> Pair(""" "${it.message}" """, 1)
                         else -> throw it
                     }
@@ -182,7 +186,7 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      *
      * @param name the name of JS function used in `webview_bind`
      */
-    actual fun unbind(name: String) = webview_unbind(w,name)
+    actual fun unbind(name: String) = webview_unbind(w, name)
 
     /**
      * Posts a function to be executed on the main thread.
@@ -193,14 +197,14 @@ actual class WebviewKo actual constructor(debug: Int, libPath :String?) {
      *
      */
     actual fun dispatch(fn: WebviewKo.() -> Unit) {
-        val ctx = StableRef.create(DispatchContext(this,fn))
+        val ctx = StableRef.create(DispatchContext(this, fn))
         addDispose(ctx)
         webview_dispatch(
             w,
-            staticCFunction { w,arg ->
-                initRuntimeIfNeeded()
+            staticCFunction { w, arg ->
+                //initRuntimeIfNeeded()
                 val ctx = arg!!.asStableRef<DispatchContext>()
-                val (webviewKo,callback) = ctx.get()
+                val (webviewKo, callback) = ctx.get()
                 callback(webviewKo)
             },
             ctx.asCPointer()

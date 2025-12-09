@@ -1,22 +1,31 @@
-headers = webview/webview.h
-headerFilter = webview/webview.h
-package = com.github.winterreisender.cwebview
+package = com.github.winterreisender.cwebviewko
+headers = bridge.h
 
-compilerOpts = -Isrc/nativeMain/nativeInterop/cinterop/
+# --- Compiler Options ---
+# Use C++14 to ensure compatibility with modern headers
+compilerOpts = -I. -DWEBVIEW_STATIC
 
-staticLibraries.mingw_x64 = libwebview.a
-libraryPaths.mingw_x64 = src/nativeMain/nativeInterop/cinterop/webview/mingwX64
-linkerOpts.mingw = -ladvapi32 -lole32 -lshell32 -lshlwapi -luser32 -lversion
+# Windows (MinGW) specific options
+compilerOpts.mingw = -DWEBVIEW_EDGE
+linkerOpts.mingw = -lole32 -lcomctl32 -lshlwapi -luser32 -lgdi32 -lstdc++
 
-#linkerOpts.linux_x64 = src/nativeMain/nativeInterop/cinterop/webview/linuxX64/libwebview.so
+# Linux specific options
+compilerOpts.linux = -DWEBVIEW_GTK
 
-# pkg-config seems not work with Kotlin
-#libraryPaths.linux_x64 = src/nativeMain/nativeInterop/cinterop/webview/linuxX64
-#linkerOpts.linux_x64 = $(pkg-config --cflags gtk+-3.0 webkit2gtk-4.0)
-#compilerOpts.linux_x64 = $(pkg-config --libs gtk+-3.0 webkit2gtk-4.0)
+# macOS specific options
+compilerOpts.osx = -DWEBVIEW_COCOA
+linkerOpts.osx = -framework WebKit -framework Cocoa
 
-staticLibraries.osx = libwebview.a
-libraryPaths.osx = src/nativeMain/nativeInterop/cinterop/webview/macosX64
-linkerOpts.osx = -framework WebKit
-compilerOpts.osx = -framework WebKit
+---
 
+#define WEBVIEW_IMPLEMENTATION
+
+#ifdef _WIN32
+    #include <objbase.h>
+    #include <shobjidl.h>
+#endif
+
+// Include the implementation here.
+// Since bridge.h (included by cinterop stub) now includes webview.h,
+// the include guards in webview.h will prevent redefinition here.
+#include "webview.h"
