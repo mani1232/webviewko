@@ -16,18 +16,6 @@ lateinit var osPrefix: String
 
 kotlin {
     compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
-    //jvm {
-    //    java {
-    //        withSourcesJar()
-    //    }
-    //    testRuns["test"].executionTask.configure {
-    //        useJUnitPlatform()
-    //    }
-    //}
-
-    //js {
-    //    nodejs {}
-    //}
 
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
@@ -52,7 +40,7 @@ kotlin {
         compilations.getByName("main") {
             cinterops {
                 val cwebview by creating {
-                    val interopDir = project.file("src/nativeMain/nativeInterop/cinterop")
+                    val interopDir = project.file("src/commonMain/nativeInterop/cinterop")
                     definitionFile.set(interopDir.resolve("webview.def"))
 
                     packageName("${group}.cwebview")
@@ -95,40 +83,17 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                //implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
             }
         }
-        //val jvmMain by getting {
-        //    dependencies {
-        //        api("net.java.dev.jna:jna:5.18.1")
-        //    }
-        //}
-        //val jvmTest by getting {
-        //    dependencies {
-        //        implementation("net.java.dev.jna:jna-platform:5.18.1")
-        //    }
-        //}
-        //val jsMain by getting {
-        //    dependencies {
-        //        implementation(kotlin("stdlib-js"))
-        //        implementation(npm("webview-nodejs", "1.1.0"))
-        //    }
-        //}
-        //val jsTest by getting {
-        //    dependencies {
-        //        implementation(kotlin("test-js"))
-        //    }
-        //}
-        val nativeMain by getting
-        val nativeTest by getting
     }
 }
 

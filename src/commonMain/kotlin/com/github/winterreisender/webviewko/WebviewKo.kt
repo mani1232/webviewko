@@ -1,51 +1,41 @@
-/*
- * Copyright (C) 2022. Winterreisender
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * SPDX short identifier: Apache-2.0
- */
+@file:OptIn(ExperimentalForeignApi::class)
 
 package com.github.winterreisender.webviewko
 
-/**
- * **Experimental**. Binds a Kotlin callback so that it will appear under the given name as a global JS function.
- *
- * Callback `fn` receives a request String, which is a JSON array of all the arguments passed to the JS function and returns `Unit`,`String` or `Pair<String,Int>`.
- *
- * @param name the name of the global JS function
- * @param fn the callback function which receives the request parameter in JSON as input and return the response JSON and status.When `fn` return `Pair(Response,Status)` the webview will receive the response and status . When `fn` returns `String`, the Status is 0. When `fn` returns `Unit`, the webview won't receive a feedback.
- */
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
+import com.github.winterreisender.cwebview.*
+import kotlinx.cinterop.*
+import kotlin.concurrent.AtomicReference
 
-inline fun <reified R : @Serializable Any> WebviewKo.bindAuto(
-    name: String,
-    crossinline fn: WebviewKo.(Array<out JsonElement>) -> R
-) = bind(name) {
-    Json.encodeToString(
-        fn(Json.decodeFromString(it))
-    )
-}
+private typealias BindContext = Pair<WebviewKo, WebviewKo.(String?) -> Pair<String, Int>?>
+private typealias DispatchContext = Pair<WebviewKo, WebviewKo.() -> Unit>
+
 
 /**
- * The Kotlin Multiplatform binding to webview
+ * The Kotlin/Native binding to webview
  *
+ * @constructor create a webview or throws `Exception` if failed
  * @param debug enable debug mode for webview
- * @param libPath The lib's path. Not supported in Kotlin/Native
+ * @param libPath not supported in Kotlin/Native
  */
-expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
+
+class WebviewKo(debug: Int, libPath: String? = null) {
+    private val w: webview_t = webview_create(debug, null) ?: throw Exception("Failed to create webview")
+
+    // Garbage Collection List for bind and dispatch
+    private val disposeList = AtomicReference(listOf<StableRef<Any>>())
+    private fun addDispose(s: StableRef<Any>) {
+        disposeList.value = mutableListOf<StableRef<Any>>().apply {
+            addAll(disposeList.value)
+            if (!contains(s)) {
+                add(s)
+            }
+        }
+    }
+
+    protected fun finalize() {
+        disposeList.value.forEach { it.dispose() }
+        webview_destroy(w)
+    }
 
     /**
      * Updates the title of the native window.
@@ -54,7 +44,8 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      *
      * @param v the new title
      */
-    fun title(v: String): Int
+    fun title(v: String) = webview_set_title(w, v)
+
 
     /**
      * Navigates webview to the given URL
@@ -63,7 +54,7 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      *
      * @param v the URL or URI
      * */
-    fun url(v: String): Int
+    fun url(v: String) = navigate(v)
 
     /**
      * Navigates webview to the given URL
@@ -72,14 +63,22 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      *
      * @param url the URL or URI
      * */
-    fun navigate(url: String): Int
+    fun navigate(url: String) = webview_navigate(w, url)
 
     /**
      * Set webview HTML directly.
      *
      * @param v the HTML content
      */
-    fun html(v: String): Int
+    fun html(v: String) = webview_set_html(w, v)
+
+
+    enum class WindowHint(val v: webview_hint_t) {
+        None(webview_hint_t.WEBVIEW_HINT_NONE),
+        Min(webview_hint_t.WEBVIEW_HINT_MIN),
+        Max(webview_hint_t.WEBVIEW_HINT_MAX),
+        Fixed(webview_hint_t.WEBVIEW_HINT_FIXED)
+    }
 
     /**
      * Updates the size of the native window.
@@ -88,29 +87,17 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      *
      * @param hints can be one of [WindowHint]
      */
-    fun size(width: Int, height: Int, hints: WindowHint = WindowHint.None): Int
-
-    /**
-     * The window size hints used by `WebviewKo.size`
-     *
-     * A Wrapper of WEBVIEW_HINT_NONE, WEBVIEW_HINT_MIN, WEBVIEW_HINT_MAX and WEBVIEW_HINT_FIXED
-     *
-     */
-    enum class WindowHint {
-        None,
-        Min,
-        Max,
-        Fixed
-    }
+    fun size(width: Int, height: Int, hints: WindowHint) =
+        webview_set_size(w, width, height, hints.v)
 
     /**
      * Injects JS code at the initialization of the new page.
      *
-     * Same as `initJS`. Every time the webview will open a new page - this initialization code will be executed. It is guaranteed that code is executed before window.onload.
+     * Same as `initJS`. Every time the webview will open a new page - this initialization code will be executed. It is guaranteed that code is executed before `window.onload`.
      *
      * @param js the JS code
      */
-    fun init(js: String): Int
+    fun init(js: String) = webview_init(w, js)
 
     /**
      * Evaluates arbitrary JS code.
@@ -119,7 +106,32 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      *
      * @param js the JS code
      */
-    fun eval(js: String): Int
+    fun eval(js: String) = webview_eval(w, js)
+
+
+    /**
+     * Binds a Kotlin function callback so that it will appear under the given name as a global JS function.
+     *
+     * Callback receives a request string. Request string is a JSON array of all the arguments passed to the JS function. If you need binding a C function, see [WebviewKo.cBind]
+     *
+     * @param name the name of the global JS function
+     * @param fn the callback function which receives the request parameter in JSON as input and return the response to JS in JSON.
+     */
+    fun bindRaw(name: String, fn: WebviewKo.(String?) -> Pair<String, Int>?) {
+        val ctx = StableRef.create(BindContext(this, fn))
+        addDispose(ctx)
+
+        webview_bind(
+            w, name,
+            staticCFunction { seq, req, arg ->
+                //initRuntimeIfNeeded()
+                val (webviewKo, callback) = arg!!.asStableRef<BindContext>().get()
+                val (response, status) = callback(webviewKo, req?.toKString()) ?: return@staticCFunction
+                webview_return(webviewKo.w, seq?.toKString(), status, response)
+            },
+            ctx.asCPointer()
+        )
+    }
 
     /**
      * Should be used in [bind] to throw an exception in JS
@@ -127,19 +139,10 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      * This exception will be caught by [bind] and trigger the `Promise.reject(reason)` in JS.
      *
      * @param reason the reason shown in JS.
-     * @param json the JSON Exception object for JS. If it's not null, `reason` will have no effect.
+     * @param json the JSON Exception object for JS. If it's not null, `reason` willed be covered
      */
-    class JSRejectException(reason: String? = null, json: String? = null) : Throwable
-
-    /**
-     * Binds a native Kotlin/Java callback so that it will appear under the given name as a global JS function.
-     *
-     * Callback receives a request string. Request string is a JSON array of all the arguments passed to the JS function.
-     *
-     * @param name the name of the global JS function
-     * @param fn the callback function which receives the request parameter in JSON as input and return the response to JS in JSON. In Java the fn should be String response(WebviewKo webview, String request)
-     */
-    fun bindRaw(name: String, fn: WebviewKo.(String?) -> Pair<String, Int>?)
+    class JSRejectException(reason: String?, json: String?) :
+        Throwable(json ?: """ "$reason" """)
 
     /**
      * Binds a Kotlin callback so that it will appear under the given name as a global JS function.
@@ -147,15 +150,26 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      * @param name the name of the global JS function
      * @param fn the callback function which receives the request parameter in JSON as input and return the response JSON. If you want to reject the `Promise`, throw [JSRejectException] in `fn`
      */
-    fun bind(name: String, fn: WebviewKo.(String) -> String)
+    fun bind(name: String, fn: WebviewKo.(String) -> String) {
+        bindRaw(name) { rawBind ->
+            runCatching { fn(rawBind ?: "") }.fold(
+                onSuccess = { Pair(it, 0) },
+                onFailure = {
+                    when (it) {
+                        is JSRejectException -> Pair(""" "${it.message}" """, 1)
+                        else -> throw it
+                    }
+                }
+            )
+        }
+    }
 
     /**
      * Removes a callback that was previously set by `webview_bind`.
      *
      * @param name the name of JS function used in `webview_bind`
      */
-    fun unbind(name: String): Int
-
+    fun unbind(name: String) = webview_unbind(w, name)
 
     /**
      * Posts a function to be executed on the main thread.
@@ -165,29 +179,35 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      * @param fn the function to be executed on the main thread.
      *
      */
-    fun dispatch(fn: WebviewKo.() -> Unit)
-
+    fun dispatch(fn: WebviewKo.() -> Unit) {
+        val ctx = StableRef.create(DispatchContext(this, fn))
+        addDispose(ctx)
+        webview_dispatch(
+            w,
+            staticCFunction { w, arg ->
+                //initRuntimeIfNeeded()
+                val ctx = arg!!.asStableRef<DispatchContext>()
+                val (webviewKo, callback) = ctx.get()
+                callback(webviewKo)
+            },
+            ctx.asCPointer()
+        )
+    }
 
     /**
      * Runs the main loop until it's terminated. **After this function exits - you must destroy the webview**.
      *
      * This will block the thread.
      */
-    fun start(): Int
-
-    /**
-     * Runs the main loop until it's terminated and destroy the webview after that.
-     *
-     * This will block the thread. This is the same as calling [start] and [destroy] serially
-     */
-    fun show()
+    fun start() = webview_run(w)
 
     /**
      * Stops the main loop.
      *
      * It is safe to call this function from another other background thread.
+     *
      */
-    fun terminate(): Int
+    fun terminate() = webview_terminate(w)
 
     /**
      * Destroy the webview and close the native window.
@@ -195,5 +215,40 @@ expect class WebviewKo(debug: Int = 0, libPath: String? = null) {
      * You must destroy the webview after [start]
      *
      */
-    fun destroy(): Int
+    fun destroy() = webview_destroy(w)
+
+    /**
+     * Runs the main loop until it's terminated and destroy the webview after that.
+     *
+     * This will block the thread. This is the same as calling [start] and [destroy] serially
+     */
+    fun show() {
+        webview_run(w)
+        webview_destroy(w)
+    }
+
+    /**
+     * Return the C Pointer of the webview.
+     *
+     * @return the [CPointer], of the webview, aka [webview_t]
+     *
+     */
+    fun getWebviewPointer() = w
 }
+
+
+//    inline fun <reified R : Any> bindEx(name :String, crossinline fn: WebviewKo.(String?) -> R) {
+//        //val isError = 1
+//        bindRaw(
+//            name
+//        ) { it ->
+//            when (R::class) {
+//                Result::class -> (fn(it) as Result<String>    ).fold({Pair(it,0)}, {Pair(""" "$it" """,1)})
+//                String::class -> runCatching {fn(it) as String}.fold({Pair(it,0)}, {Pair(""" "$it" """,1)} )
+//                Unit::class   -> fn(it).let { null }
+//                Nothing::class-> runCatching{ fn(it) }.fold({error("Unexpected Behavior: fun (*)->Nothing runs successfully.")}, {Pair(""" "$it" """,1)})
+//                Any::class-> runCatching {fn(it) as String}.fold({Pair(it,0)}, {Pair(""" "$it" """,1)} )
+//                else -> throw IllegalArgumentException(R::class.simpleName)
+//            }
+//        }
+//    }

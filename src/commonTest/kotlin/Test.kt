@@ -15,7 +15,9 @@
  *
  * SPDX short identifier: Apache-2.0
  */
+@file:OptIn(ExperimentalForeignApi::class)
 import com.github.winterreisender.webviewko.WebviewKo
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.*
@@ -24,9 +26,9 @@ import kotlin.test.Test
 internal class Test {
     // A simple test showed in README
     @Test fun demo_simple() {
-        WebviewKo().run {
+        WebviewKo(0).run {
             title("Title")
-            size(800, 600)
+            size(800, 600, WebviewKo.WindowHint.Fixed)
             url("https://example.com")
             start()
         }
@@ -62,7 +64,7 @@ internal class Test {
     @Test fun api_Full() {
         WebviewKo(1).run {
             title("Title")
-            size(800,600)
+            size(800,600, WebviewKo.WindowHint.Fixed)
             url("https://example.com")
             init("""console.log("Hello, from  init")""")
 
@@ -88,21 +90,21 @@ internal class Test {
             }
              */
 
-            bind("jsRejectTest") {
-                throw WebviewKo.JSRejectException("NotImplemented") // Should call `Promise.reject(reason :string)` and Get an Exception in JS
-            }
-
-            bind("jsRejectTest2") {
-                // Should call `Promise.reject(reason :string)` and Get an Exception in JS
-                throw WebviewKo.JSRejectException(json = """ 
-                    {
-                        "jsonrpc": "2.0",
-                        "code" : 1,
-                        "message" : "Nothing found",
-                        "data":null
-                    }
-                """.trimIndent())
-            }
+            //bind("jsRejectTest") {
+            //    throw WebviewKo.JSRejectException("NotImplemented") // Should call `Promise.reject(reason :string)` and Get an Exception in JS
+            //}
+//
+            //bind("jsRejectTest2") {
+            //    // Should call `Promise.reject(reason :string)` and Get an Exception in JS
+            //    throw WebviewKo.JSRejectException(json = """
+            //        {
+            //            "jsonrpc": "2.0",
+            //            "code" : 1,
+            //            "message" : "Nothing found",
+            //            "data":null
+            //        }
+            //    """.trimIndent())
+            //}
 
             html("""
                 <button id="increment">Tap me</button>
@@ -128,7 +130,7 @@ internal class Test {
         // Example about using third part Json Serialization (kotlinx-serialization-json)
         WebviewKo(1).run {
             title("Title")
-            size(800,600)
+            size(800,600, WebviewKo.WindowHint.Fixed)
             url("https://example.com")
             init("""console.log("Hello, from  init")""")
 
@@ -171,7 +173,7 @@ internal class Test {
                 eval("""alert($it)""")
                 "OK"
             }
-            size(800,600)
+            size(800,600, WebviewKo.WindowHint.Fixed)
 
             init("""
                 let w = window.open('');
