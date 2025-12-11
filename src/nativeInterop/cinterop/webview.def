@@ -1,0 +1,4 @@
+headers = webview.h
+staticLibraries = libwebview.a
+
+compilerOpts = -Isrc/nativeInterop/include -I./nativeInterop/include

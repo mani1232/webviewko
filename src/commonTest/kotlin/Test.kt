@@ -20,13 +20,18 @@ import com.github.winterreisender.webviewko.WebviewKo
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import kotlin.test.Test
 
 internal class Test {
     // A simple test showed in README
     @Test fun demo_simple() {
-        WebviewKo(0).run {
+        WebviewKo().run {
             title("Title")
             size(800, 600, WebviewKo.WindowHint.Fixed)
             url("https://example.com")
@@ -36,7 +41,7 @@ internal class Test {
 
     // An interactive test showed in README
     @Test fun demo_interact() {
-        WebviewKo(1).run {
+        WebviewKo().run {
             title("Test")
             init("""console.log("Hello, from init")""")
             bind("increment") {
@@ -62,7 +67,7 @@ internal class Test {
     }
 
     @Test fun api_Full() {
-        WebviewKo(1).run {
+        WebviewKo().run {
             title("Title")
             size(800,600, WebviewKo.WindowHint.Fixed)
             url("https://example.com")
@@ -128,7 +133,7 @@ internal class Test {
 
     @Test fun jsonTest() {
         // Example about using third part Json Serialization (kotlinx-serialization-json)
-        WebviewKo(1).run {
+        WebviewKo().run {
             title("Title")
             size(800,600, WebviewKo.WindowHint.Fixed)
             url("https://example.com")
@@ -167,7 +172,7 @@ internal class Test {
     }
 
     @Test fun fullscreen() {
-        WebviewKo(1).run {
+        WebviewKo().run {
             bind("myBind") {
                 println(it)
                 eval("""alert($it)""")

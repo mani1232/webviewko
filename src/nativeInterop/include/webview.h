@@ -1789,7 +1789,8 @@ public:
 
   void detach() { m_handle = nullptr; }
 
-  // Returns true if the library by the given name is currently loaded; otherwise false.
+  // Returns true if the library by the given name is currently loaded;
+  // otherwise false.
   static inline bool is_loaded(const std::string &name) {
 #ifdef _WIN32
     auto handle = GetModuleHandleW(widen_string(name).c_str());
@@ -2409,7 +2410,6 @@ private:
 
 // IWYU pragma: begin_exports
 
-
 #include <objc/NSObjCRuntime.h>
 #include <objc/objc-runtime.h>
 
@@ -2486,7 +2486,8 @@ namespace webview {
 namespace detail {
 
 // Parses a version string with 1-4 integral components, e.g. "1.2.3.4".
-// Missing or invalid components default to 0, and excess components are ignored.
+// Missing or invalid components default to 0, and excess components are
+// ignored.
 template <typename T>
 std::array<unsigned int, 4>
 parse_version(const std::basic_string<T> &version) noexcept {
@@ -3117,7 +3118,8 @@ inline void NSWindow_set_contentMaxSize(id self, NSSize size) {
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_COCOA_NSWINDOW_HH
 // file end: include/webview/detail/platform/darwin/cocoa/NSWindow.hh
-// file begin: include/webview/detail/platform/darwin/webkit/WKOpenPanelParameters.hh
+// file begin:
+// include/webview/detail/platform/darwin/webkit/WKOpenPanelParameters.hh
 #ifndef WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKOPENPANELPARAMETERS_HH
 #define WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKOPENPANELPARAMETERS_HH
 
@@ -3144,8 +3146,9 @@ inline bool WKOpenPanelParameters_get_allowsDirectories(id self) {
 #endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKOPENPANELPARAMETERS_HH
-// file end: include/webview/detail/platform/darwin/webkit/WKOpenPanelParameters.hh
-// file begin: include/webview/detail/platform/darwin/webkit/WKScriptMessage.hh
+// file end:
+// include/webview/detail/platform/darwin/webkit/WKOpenPanelParameters.hh file
+// begin: include/webview/detail/platform/darwin/webkit/WKScriptMessage.hh
 #ifndef WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKSCRIPTMESSAGE_HH
 #define WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKSCRIPTMESSAGE_HH
 
@@ -3167,7 +3170,8 @@ inline id WKScriptMessage_get_body(id self) {
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKSCRIPTMESSAGE_HH
 // file end: include/webview/detail/platform/darwin/webkit/WKScriptMessage.hh
-// file begin: include/webview/detail/platform/darwin/webkit/WKUserContentController.hh
+// file begin:
+// include/webview/detail/platform/darwin/webkit/WKUserContentController.hh
 #ifndef WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKUSERCONTENTCONTROLLER_HH
 #define WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKUSERCONTENTCONTROLLER_HH
 
@@ -3198,8 +3202,9 @@ inline void WKUserContentController_removeAllUserScripts(id self) {
 #endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKUSERCONTENTCONTROLLER_HH
-// file end: include/webview/detail/platform/darwin/webkit/WKUserContentController.hh
-// file begin: include/webview/detail/platform/darwin/webkit/WKUserScript.hh
+// file end:
+// include/webview/detail/platform/darwin/webkit/WKUserContentController.hh file
+// begin: include/webview/detail/platform/darwin/webkit/WKUserScript.hh
 #ifndef WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKUSERSCRIPT_HH
 #define WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKUSERSCRIPT_HH
 
@@ -3320,7 +3325,8 @@ inline void WKWebView_set_inspectable(id self, bool inspectable) {
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEW_HH
 // file end: include/webview/detail/platform/darwin/webkit/WKWebView.hh
-// file begin: include/webview/detail/platform/darwin/webkit/WKWebViewConfiguration.hh
+// file begin:
+// include/webview/detail/platform/darwin/webkit/WKWebViewConfiguration.hh
 #ifndef WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEWCONFIGURATION_HH
 #define WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEWCONFIGURATION_HH
 
@@ -3350,8 +3356,9 @@ inline id WKWebViewConfiguration_get_preferences(id self) {
 #endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEWCONFIGURATION_HH
-// file end: include/webview/detail/platform/darwin/webkit/WKWebViewConfiguration.hh
-// file begin: include/webview/detail/platform/windows/dpi.hh
+// file end:
+// include/webview/detail/platform/darwin/webkit/WKWebViewConfiguration.hh file
+// begin: include/webview/detail/platform/windows/dpi.hh
 #ifndef WEBVIEW_PLATFORM_WINDOWS_DPI_HH
 #define WEBVIEW_PLATFORM_WINDOWS_DPI_HH
 
@@ -3661,10 +3668,8 @@ private:
 
     client_info_t(bool found, std::wstring dll_path, std::wstring version,
                   webview2_runtime_type runtime_type)
-        : found{found},
-          dll_path{std::move(dll_path)},
-          version{std::move(version)},
-          runtime_type{runtime_type} {}
+        : found{found}, dll_path{std::move(dll_path)},
+          version{std::move(version)}, runtime_type{runtime_type} {}
   };
 
   HRESULT create_environment_with_options_impl(
@@ -4310,7 +4315,6 @@ inline id NSURL_URLWithString(const std::string &string) {
 
 // IWYU pragma: begin_exports
 
-
 #endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_HH
@@ -4802,7 +4806,8 @@ public:
     // WebView creation fails with HRESULT_FROM_WIN32(ERROR_INVALID_STATE) if
     // a running instance using the same user data folder exists, and the
     // Environment objects have different EnvironmentOptions.
-    // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
+    // Source:
+    // https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
     if (m_attempts < m_max_attempts) {
       ++m_attempts;
       auto res = m_attempt_handler();
@@ -5072,8 +5077,9 @@ protected:
       set_default_size_guard(true);
       // Sadly we need to pump the event loop in order to get the script ID.
       run_event_loop_while([&] { return !done; });
-      // The user's `set_size` may have been executed from the depleted event queue,
-      // and if so, guard against putting the default `set_size` back onto the queue.
+      // The user's `set_size` may have been executed from the depleted event
+      // queue, and if so, guard against putting the default `set_size` back
+      // onto the queue.
       if (!m_is_window_shown) {
         set_default_size_guard(false);
         dispatch_size_default();
@@ -5174,9 +5180,10 @@ private:
           return TRUE;
         }
         case 0x02E0 /*WM_DPICHANGED*/: {
-          // Windows 10: The size we get here is exactly what we supplied to WM_GETDPISCALEDSIZE.
-          // Windows 11: The size we get here is NOT what we supplied to WM_GETDPISCALEDSIZE.
-          // Due to this difference, don't use the suggested bounds.
+          // Windows 10: The size we get here is exactly what we supplied to
+          // WM_GETDPISCALEDSIZE. Windows 11: The size we get here is NOT what
+          // we supplied to WM_GETDPISCALEDSIZE. Due to this difference, don't
+          // use the suggested bounds.
           auto dpi = static_cast<int>(HIWORD(wp));
           w->on_dpi_changed(dpi);
           break;
@@ -5477,7 +5484,8 @@ private:
 
   // The app is expected to call CoInitializeEx before
   // CreateCoreWebView2EnvironmentWithOptions.
-  // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl#createcorewebview2environmentwithoptions
+  // Source:
+  // https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl#createcorewebview2environmentwithoptions
   com_init_wrapper m_com_init;
   HWND m_window = nullptr;
   HWND m_widget = nullptr;
@@ -5533,7 +5541,6 @@ inline NSModalResponse NSSavePanel_runModal(id self) {
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 
 // IWYU pragma: begin_exports
-
 
 #endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
@@ -6026,9 +6033,11 @@ private:
   }
   void set_up_widget() {
     objc::autoreleasepool arp;
-    // Create a new view that can contain both the web view and the Web Inspector pane
+    // Create a new view that can contain both the web view and the Web
+    // Inspector pane
     m_widget = objc::retain(NSView_withFrame(NSRectMake(0, 0, 0, 0)));
-    // Autoresizing is needed because the Web Inspector pane is a sibling of the web view
+    // Autoresizing is needed because the Web Inspector pane is a sibling of the
+    // web view
     NSView_set_autoresizesSubviews(m_widget, true);
     NSView_addSubview(m_widget, m_webview);
     NSView_set_frame(m_webview, NSView_get_bounds(m_widget));

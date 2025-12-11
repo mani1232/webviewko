@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform") version "2.3.0-RC3"
+    kotlin("plugin.serialization") version "2.3.0-RC3"
     id("maven-publish")
     id("org.jetbrains.dokka") version "2.1.0"
 }
@@ -12,71 +13,92 @@ repositories {
     mavenCentral()
 }
 
-lateinit var osPrefix: String
-
 kotlin {
     compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
 
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val isMac = hostOs == "Mac OS X"
-    val isLinux = hostOs == "Linux"
+    mingwX64 {
+        //binaries {
+        //    executable {
+        //        entryPoint = "main"
+        //        linkerOpts(
+        //            "-L${projectDir}/libs/windows",
+        //            "-lwebview",
+        //            "-lole32", "-lcomctl32", "-loleaut32", "-luuid", "-lgdi32", "-luser32"
+        //        )
+        //    }
+        //}
 
-    osPrefix = when {
-        isLinux -> "linuxX64"
-        isMac -> "macosX64"
-        isMingwX64 -> "mingwX64"
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-    }
-
-    val nativeTarget = when {
-        isMingwX64 -> mingwX64("native")
-        isLinux -> linuxX64("native")
-        isMac -> macosX64("native")
-        else -> throw GradleException("$hostOs is not supported.")
-    }
-
-    nativeTarget.apply {
         compilations.getByName("main") {
             cinterops {
-                val cwebview by creating {
-                    val interopDir = project.file("src/commonMain/nativeInterop/cinterop")
-                    definitionFile.set(interopDir.resolve("webview.def"))
+                val webview by cinterops.creating {
+                    definitionFile.set(project.file("src/nativeInterop/cinterop/webview.def"))
 
-                    packageName("${group}.cwebview")
+                    packageName("$group.cwebview")
 
-                    includeDirs(interopDir)
-
-                    if (isLinux) {
-                        try {
-                            val cflags = "pkg-config --cflags gtk+-3.0 webkit2gtk-4.0".runCommand()
-                            extraOpts("-compiler-options", cflags)
-                        } catch (e: Exception) {
-                            println("Warning: pkg-config failed. Make sure libgtk-3-dev and libwebkit2gtk-4.0-dev are installed.")
-                        }
-                    }
+                    includeDirs("nativeInterop/include")
+                    extraOpts(
+                        "-libraryPath", project.file("libs/windows").absolutePath,
+                        "-verbose"
+                    )
                 }
             }
         }
+    }
+    linuxX64 {
+        //binaries {
+        //    executable {
+        //        entryPoint = "main"
+//
+        //        val pkgConfig = runCatching {
+        //            ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "webkit2gtk-4.1")
+        //                .start()
+        //                .inputStream.bufferedReader().readText().trim()
+        //        }.getOrDefault("")
+//
+        //        linkerOpts("-L${projectDir}/libs/linux")
+        //        if (pkgConfig.isNotEmpty()) {
+        //            linkerOpts(pkgConfig.split("\\s+".toRegex()))
+        //        } else {
+        //            linkerOpts("-lgtk-3", "-lgdk-3", "-lwebkit2gtk-4.1", "-lgio-2.0")
+        //        }
+        //    }
+        //}
 
-        binaries {
-            executable {
-                entryPoint = "main"
+        compilations.getByName("main") {
+            cinterops {
+                val webview by cinterops.creating {
+                    includeDirs("nativeInterop/include")
+                    definitionFile.set(project.file("src/nativeInterop/cinterop/webview.def"))
 
-                if (isLinux) {
-                    try {
-                        val libs = "pkg-config --libs gtk+-3.0 webkit2gtk-4.0".runCommand()
-                        linkerOpts(libs.split("\\s+".toRegex()))
-                    } catch (e: Exception) {
-                        println("Warning: pkg-config failed during linking config.")
-                    }
+                    packageName("$group.cwebview")
+                    extraOpts("-libraryPath", project.file("libs/linux").absolutePath)
                 }
             }
+        }
+    }
 
-            test("native") {
-                if (isLinux) {
-                    val libs = "pkg-config --libs gtk+-3.0 webkit2gtk-4.0".runCommand()
-                    linkerOpts(libs.split("\\s+".toRegex()))
+    macosX64 {
+        //binaries {
+        //    executable {
+        //        entryPoint = "main"
+//
+        //        linkerOpts(
+        //            "-L${project.file("libs/macos").absolutePath}",
+        //            "-lwebview",
+        //            "-framework", "WebKit",
+        //            "-framework", "Cocoa"
+        //        )
+        //    }
+        //}
+
+        compilations.getByName("main") {
+            cinterops {
+                val webview by creating {
+                    defFile(project.file("src/nativeInterop/cinterop/webview.def"))
+                    packageName("$group.cwebview")
+                    includeDirs(project.file("nativeInterop/include"))
+
+                    extraOpts("-libraryPath", project.file("libs/macos").absolutePath)
                 }
             }
         }
@@ -90,8 +112,8 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation(kotlin("test"))
             }
         }
     }
@@ -104,29 +126,12 @@ tasks.withType<JavaCompile> {
 publishing {
     repositories {
         maven {
-            name = "GitLabPackages"
-            url = uri("https://gitlab.com/api/v4/projects/38224197/packages/maven")
-            credentials(HttpHeaderCredentials::class) {
-                name = "Private-Token"
-                value = System.getenv("GITLAB_TOKEN")
-            }
-            authentication {
-                create<HttpHeaderAuthentication>("header")
+            name = "worldMandia"
+            url = uri("https://repo.worldmandia.cc/snapshots")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
-    }
-}
-
-fun String.runCommand(): String {
-    return try {
-        val parts = this.split("\\s+".toRegex())
-        val proc = ProcessBuilder(*parts.toTypedArray())
-            .redirectOutput(ProcessBuilder.Redirect.PIPE)
-            .redirectError(ProcessBuilder.Redirect.PIPE)
-            .start()
-        proc.waitFor(10, TimeUnit.SECONDS)
-        proc.inputStream.bufferedReader().readText().trim()
-    } catch(e: Exception) {
-        ""
     }
 }
