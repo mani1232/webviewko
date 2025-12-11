@@ -135,3 +135,10 @@ publishing {
         }
     }
 }
+
+tasks.withType<PublishToMavenRepository>().configureEach {
+    val pub = publication
+    if (pub != null && pub.name == "kotlinMultiplatform") {
+        onlyIf { System.getProperty("os.name").startsWith("Linux") }
+    }
+}
