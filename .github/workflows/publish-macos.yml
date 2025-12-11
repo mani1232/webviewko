@@ -1,4 +1,4 @@
-name: Publish to WorldMandia Repo
+name: Publish macOS
 
 on:
   release:
@@ -6,13 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-library:
-    name: Publish on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+  publish-macos:
+    name: Publish on macOS
+    runs-on: macos-latest
 
     steps:
       - name: Checkout code
@@ -29,19 +25,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Linux Dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
-
       - name: Grant execute permission for gradlew
-        if: runner.os != 'Windows'
         run: chmod +x gradlew
 
       - name: Publish to Custom Repository
         env:
           REPO_USER: ${{ secrets.REPO_USER }}
           REPO_PASSWORD: ${{ secrets.REPO_PASSWORD }}
-
         run: ./gradlew publishAllPublicationsToWorldMandiaRepository
