@@ -129,8 +129,8 @@ publishing {
             name = "worldMandia"
             url = uri("https://repo.worldmandia.cc/snapshots")
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                username = System.getenv("REPO_USER")
+                password = System.getenv("REPO_PASSWORD")
             }
         }
     }
