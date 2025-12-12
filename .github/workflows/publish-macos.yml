@@ -32,4 +32,4 @@ jobs:
         env:
           REPO_USER: ${{ secrets.REPO_USER }}
           REPO_PASSWORD: ${{ secrets.REPO_PASSWORD }}
-        run: ./gradlew publishAllPublicationsToWorldMandiaRepository
+        run: ./gradlew publishMacosX64PublicationToWorldMandiaRepository

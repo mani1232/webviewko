@@ -2,3 +2,9 @@ headers = webview.h
 staticLibraries = libwebview.a
 
 compilerOpts = -Isrc/nativeInterop/include -I./nativeInterop/include
+
+linkerOpts.mingw = -lole32 -lcomctl32 -loleaut32 -luuid -lshlwapi -luser32 -lversion
+
+linkerOpts.osx = -framework WebKit -framework Cocoa
+
+linkerOpts.linux = -lwebkit2gtk-4.1 -lgtk-3 -lgdk-3 -lgobject-2.0 -lglib-2.0

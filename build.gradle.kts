@@ -17,17 +17,6 @@ kotlin {
     compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
 
     mingwX64 {
-        //binaries {
-        //    executable {
-        //        entryPoint = "main"
-        //        linkerOpts(
-        //            "-L${projectDir}/libs/windows",
-        //            "-lwebview",
-        //            "-lole32", "-lcomctl32", "-loleaut32", "-luuid", "-lgdi32", "-luser32"
-        //        )
-        //    }
-        //}
-
         compilations.getByName("main") {
             cinterops {
                 val webview by cinterops.creating {
@@ -45,25 +34,6 @@ kotlin {
         }
     }
     linuxX64 {
-        //binaries {
-        //    executable {
-        //        entryPoint = "main"
-//
-        //        val pkgConfig = runCatching {
-        //            ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "webkit2gtk-4.1")
-        //                .start()
-        //                .inputStream.bufferedReader().readText().trim()
-        //        }.getOrDefault("")
-//
-        //        linkerOpts("-L${projectDir}/libs/linux")
-        //        if (pkgConfig.isNotEmpty()) {
-        //            linkerOpts(pkgConfig.split("\\s+".toRegex()))
-        //        } else {
-        //            linkerOpts("-lgtk-3", "-lgdk-3", "-lwebkit2gtk-4.1", "-lgio-2.0")
-        //        }
-        //    }
-        //}
-
         compilations.getByName("main") {
             cinterops {
                 val webview by cinterops.creating {
@@ -78,19 +48,6 @@ kotlin {
     }
 
     macosX64 {
-        //binaries {
-        //    executable {
-        //        entryPoint = "main"
-//
-        //        linkerOpts(
-        //            "-L${project.file("libs/macos").absolutePath}",
-        //            "-lwebview",
-        //            "-framework", "WebKit",
-        //            "-framework", "Cocoa"
-        //        )
-        //    }
-        //}
-
         compilations.getByName("main") {
             cinterops {
                 val webview by creating {
